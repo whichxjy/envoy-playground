@@ -1,0 +1,81 @@
+static_resources:
+  listeners:
+    - address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 8888
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.wasm
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.wasm.v3.Wasm
+                config:
+                  vm_config:
+                    runtime: "envoy.wasm.runtime.v8"
+                    vm_id: "netlog_vm_id"
+                    code:
+                      local:
+                        filename: "wasm-filters/netlog/netlog.wasm"
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager"
+                stat_prefix: http_proxy
+                route_config:
+                  virtual_hosts:
+                    - name: virtual_host
+                      domains:
+                        - "*"
+                      routes:
+                        - match: { prefix: "/" }
+                          route:
+                            cluster: business_cluster
+                http_filters:
+                  - name: envoy.filters.http.wasm
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                      config:
+                        vm_config:
+                          runtime: "envoy.wasm.runtime.v8"
+                          vm_id: "patcher_vm_id"
+                          code:
+                            local:
+                              filename: "wasm-filters/patcher/patcher.wasm"
+                  - name: envoy.filters.http.wasm
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                      config:
+                        vm_config:
+                          runtime: "envoy.wasm.runtime.v8"
+                          vm_id: "auth_vm_id"
+                          code:
+                            local:
+                              filename: "wasm-filters/auth/auth.wasm"
+                  - name: envoy.filters.http.router
+  clusters:
+    - name: auth_cluster
+      lb_policy: round_robin
+      load_assignment:
+        cluster_name: business_cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 127.0.0.1
+                      port_value: 5555
+    - name: business_cluster
+      lb_policy: round_robin
+      load_assignment:
+        cluster_name: business_cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 127.0.0.1
+                      port_value: 1111
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 127.0.0.1
+                      port_value: 2222
