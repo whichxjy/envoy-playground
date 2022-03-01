@@ -14,12 +14,12 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.POST("/*", func(c echo.Context) error {
+	e.GET("/*", func(c echo.Context) error {
 		if token := c.Request().Header.Get("Token"); token != "hi" {
 			return c.String(http.StatusForbidden, "Forbidden")
 		}
 
-		return c.JSON(http.StatusOK, "OK")
+		return c.String(http.StatusOK, "OK")
 	})
 
 	port := os.Getenv("PORT")
