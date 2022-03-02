@@ -55,7 +55,7 @@ static_resources:
     - name: auth_cluster
       lb_policy: round_robin
       load_assignment:
-        cluster_name: business_cluster
+        cluster_name: auth_cluster
         endpoints:
           - lb_endpoints:
               - endpoint:
