@@ -29,7 +29,7 @@ func (ctx *netlogContext) OnDownstreamData(dataSize int, endOfStream bool) types
 	data, err := proxywasm.GetDownstreamData(0, dataSize)
 	if err != nil {
 		proxywasm.LogErrorf("failed to get downstream data: %v", err)
-		return types.ActionContinue
+		return types.ActionPause
 	}
 
 	proxywasm.LogInfof("Get downstream data (size: %v): %v", dataSize, string(data))
